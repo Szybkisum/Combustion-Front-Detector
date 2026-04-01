@@ -1,0 +1,2 @@
+class SequenceProcessor:
+    pass
