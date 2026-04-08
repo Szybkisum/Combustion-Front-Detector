@@ -1,28 +1,8 @@
 import numpy as np
 import cv2
-import os
-from io_utils.visualization_writer import save_visualization
-from io_utils.csv_writer import save_to_csv
+from io_utils.callbacks import create_result_handler_callback
 
 MAX_FRONT_JUMP_RATIO = 0.18
-
-def draw_front(img: np.ndarray, front: np.ndarray):
-    out = img.copy()
-    for x, y in enumerate(front):
-        if not np.isnan(y):
-            cv2.circle(out, (x, int(y)), 1, (0, 0, 255), -1)
-    return out
-
-def create_result_handler_callback(output_dir: str):
-    def callback(img_path: str, img: np.ndarray, front: np.ndarray):
-        image_name = os.path.splitext(os.path.basename(img_path))[0]
-        per_image_output_dir = os.path.join(output_dir, f"{image_name}_results")
-        os.makedirs(per_image_output_dir, exist_ok=True)
-
-        vis_img = draw_front(img, front)
-        save_visualization(vis_img, per_image_output_dir)
-        save_to_csv(front, per_image_output_dir)
-    return callback
 
 class SequenceProcessor:
     
@@ -96,6 +76,6 @@ class SequenceProcessor:
             front_limited = self.constrain_front_with_previous(front)
             self.update_last_front(front_limited)
             
-            mean = int(np.nanmean(front_limited)) if np.any(~np.isnan(front_limited)) else img.shape[0] - 1
+            mean = int(np.nanmean(front_limited)) if np.any(~np.isnan(front_limited)) else 0
             self.last_mean = mean
             self.result_handler(file, out_img, front_limited)
