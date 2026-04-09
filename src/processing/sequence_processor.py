@@ -12,22 +12,17 @@ class SequenceProcessor:
         self.output_dir = output_dir
         self.result_handler = create_result_handler_callback(output_dir)
 
-    def detect_fire_regions(self, img: np.ndarray):
+    def detect_fire_regions(self, img: np.ndarray) -> np.ndarray:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         max_val = gray.max()
         threshold = int(max_val * 0.9)
-        mask = gray >= threshold
-
-        mask = mask.astype(np.uint8) * 255
+        mask = (gray >= threshold).astype(np.uint8) * 255
+        
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        out = img.copy()
         final_mask = np.zeros_like(mask)
+        cv2.drawContours(final_mask, contours, -1, 255, -1)
 
-        for c in contours:
-            cv2.drawContours(out, [c], -1, (0, 255, 0), 1)
-            cv2.drawContours(final_mask, [c], -1, 255, -1)
-
-        return out, final_mask
+        return final_mask
     
     def find_fire_front(self, mask: np.ndarray) -> np.ndarray:
         h, w = mask.shape
@@ -71,11 +66,11 @@ class SequenceProcessor:
             if self.last_front is None:
                 self.last_front = np.zeros(img.shape[1])
 
-            out_img, mask = self.detect_fire_regions(img)
+            mask = self.detect_fire_regions(img)
             front = self.find_fire_front(mask)
             front_limited = self.constrain_front_with_previous(front)
             self.update_last_front(front_limited)
             
             mean = int(np.nanmean(front_limited)) if np.any(~np.isnan(front_limited)) else 0
             self.last_mean = mean
-            self.result_handler(file, out_img, front_limited)
+            self.result_handler(file, img, mask, front_limited)
