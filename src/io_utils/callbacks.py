@@ -13,5 +13,5 @@ def create_result_handler_callback(output_dir: str):
         vis = draw_front(vis, front)
 
         save_visualization(vis, per_image_output_dir)
-        save_to_csv(front, per_image_output_dir)
+        save_to_csv(front, per_image_output_dir, img.shape[0])
     return callback
